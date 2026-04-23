@@ -1,0 +1,11 @@
+node_modules
+dist
+.wrangler
+.github/dist
+build
+.vercel
+.netlify
+*.log
+.DS_Store
+.env*
+!.env.example
