@@ -1,5 +1,5 @@
 # Cloudflare Workers - Static Site (SPA) Configuration
-name = "couple-app"
+name = "mesinha-app"
 compatibility_date = "2026-04-23"
 
 [assets]
