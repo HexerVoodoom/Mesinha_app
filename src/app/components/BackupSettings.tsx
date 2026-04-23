@@ -100,6 +100,17 @@ export function BackupSettings() {
     }
   };
 
+  const handleFullSync = async () => {
+    setIsSaving(true);
+    try {
+      await syncService.fullSyncFromSupabase();
+    } catch (error) {
+      console.error('Full sync error:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleRestoreFromDrive = async () => {
     try {
       await syncService.restoreFromGoogleDrive();
@@ -278,6 +289,32 @@ export function BackupSettings() {
               )}
             </div>
           )}
+        </div>
+      </Card>
+
+      {/* Supabase Sync */}
+      <Card className="p-6 border-primary/20 bg-primary/10">
+        <div className="flex items-center gap-2 mb-4 text-primary">
+          <RefreshCw className="w-5 h-5" />
+          <h3 className="text-lg font-semibold">Sincronizar Cloud (Nuvem)</h3>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-sm text-gray-700">
+            Esta ação baixa todos os dados do banco de dados na nuvem, atualiza seu dispositivo e cria um backup no Google Drive.
+          </p>
+          <Button 
+            onClick={handleFullSync} 
+            disabled={isSaving}
+            className="w-full bg-primary hover:bg-primary/95 text-white shadow-md"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isSaving ? 'animate-spin' : ''}`} />
+            {isSaving ? 'Sincronizando...' : 'Baixar Dados da Nuvem'}
+          </Button>
+          <p className="text-xs text-amber-600 flex items-center gap-1 justify-center">
+            <AlertCircle className="w-3 h-3" />
+            Isso limpará os dados locais e substituirá pelos da nuvem.
+          </p>
         </div>
       </Card>
 

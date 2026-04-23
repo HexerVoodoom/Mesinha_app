@@ -1,6 +1,7 @@
 // Sync service to manage local storage, Supabase, and Google Drive
 import { localDB } from './localDB';
 import { googleDriveBackup } from './googleDriveBackup';
+import { api } from './api';
 import { toast } from 'sonner';
 
 export type SyncMode = 'local-only' | 'local-with-drive' | 'local-drive-supabase';
@@ -263,6 +264,52 @@ class SyncService {
     } catch (error) {
       console.error('[SyncService] Import failed:', error);
       toast.error('Erro ao importar backup');
+      throw error;
+    }
+  }
+
+  async fullSyncFromSupabase(): Promise<void> {
+    try {
+      toast.loading('Sincronizando com Supabase...', { id: 'full-sync' });
+
+      // 1. Fetch data from Supabase
+      console.log('[SyncService] Fetching data from Supabase...');
+      const backupData = await api.exportBackup();
+
+      if (!backupData || !backupData.data) {
+        throw new Error('Nenhum dado encontrado no Supabase');
+      }
+
+      // 2. Import into Local DB
+      console.log('[SyncService] Importing into local DB...');
+      await localDB.importData(backupData);
+
+      // 3. Upload to Google Drive (if authenticated)
+      if (googleDriveBackup.isAuthenticated()) {
+        console.log('[SyncService] Uploading synchronized data to Google Drive...');
+        try {
+          await googleDriveBackup.uploadBackup(backupData);
+          toast.success('Sincronizado e salvo no Google Drive!', { id: 'full-sync' });
+        } catch (driveError) {
+          console.error('[SyncService] Google Drive upload failed during full sync:', driveError);
+          toast.warning('Sincronizado localmente, mas falhou ao salvar no Drive', { id: 'full-sync' });
+        }
+      } else {
+        toast.success('Dados do Supabase carregados localmente!', { id: 'full-sync' });
+      }
+
+      // 4. Update last backup time
+      this.lastBackupTime = Date.now();
+      localStorage.setItem('last_backup_time', this.lastBackupTime.toString());
+
+      // Reload to reflect changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+
+    } catch (error) {
+      console.error('[SyncService] Full sync failed:', error);
+      toast.error('Falha na sincronização completa', { id: 'full-sync' });
       throw error;
     }
   }
